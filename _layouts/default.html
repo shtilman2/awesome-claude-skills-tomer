@@ -3,47 +3,22 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
 </head>
 <body>
-<!-- Floating Quote Button for Giscus -->
-<button id="quote-btn" type="button" style="
-  display: none; 
-  position: fixed; 
-  z-index: 99999; 
-  background: #24292e; 
-  color: #ffffff; 
-  border: 1px solid #444c56;
-  padding: 6px 12px; 
-  border-radius: 6px; 
-  font-size: 13px; 
-  font-weight: 600; 
-  cursor: pointer; 
-  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-  align-items: center;
-  gap: 6px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-">
-  <!-- Speech Bubble SVG Icon -->
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle;">
-    <path d="M1.75 1h12.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 14.25 13H10.5l-3.22 2.863A.75.75 0 0 1 6 15.313V13H1.75A1.75 1.75 0 0 1 0 11.25v-8.5C0 1.784.784 1 1.75 1ZM1.5 2.75v8.5c0 .138.112.25.25.25h5a.75.75 0 0 1 .75.75v1.44l2.51-2.231a.75.75 0 0 1 .5-.189h3.75a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25H1.75a.25.25 0 0 0-.25.25Z"></path>
-  </svg>
-  <span>Quote to Discussion</span>
-</button>
-
 <script>
   const quoteBtn = document.getElementById('quote-btn');
   let selectedText = '';
+  let selectedRange = null;
 
   document.addEventListener('mouseup', (e) => {
-    // Prevent hiding immediately when clicking the button itself
     if (quoteBtn.contains(e.target)) return;
 
     const selection = window.getSelection();
     const text = selection.toString().trim();
 
-    if (text.length > 0) {
+    if (text.length > 0 && selection.rangeCount > 0) {
       selectedText = text;
-      const rect = selection.getRangeAt(0).getBoundingClientRect();
-      
-      // Position above the highlight
+      selectedRange = selection.getRangeAt(0);
+      const rect = selectedRange.getBoundingClientRect();
+
       quoteBtn.style.top = `${Math.max(10, rect.top - 45)}px`;
       quoteBtn.style.left = `${Math.max(10, rect.left + (rect.width / 2) - 75)}px`;
       quoteBtn.style.display = 'flex';
@@ -53,7 +28,55 @@
   });
 
   quoteBtn.addEventListener('click', async () => {
-    const formattedQuote = `> ${selectedText.replace(/\n/g, '\n> ')}\n\n`;
+    if (!selectedRange || !selectedText) return;
+
+    // Find the enclosing list item (<li>) or block element containing the selection
+    const startNode = selectedRange.startContainer;
+    const currentElem = startNode.nodeType === Node.TEXT_NODE ? startNode.parentElement : startNode;
+    const listItem = currentElem.closest('li, p, tr, div');
+
+    let startLineNum = null;
+    let prevLineText = '';
+    let nextLineText = '';
+
+    if (listItem) {
+      // Get line number if inside an ordered or unordered list
+      const parentList = listItem.parentElement;
+      if (parentList) {
+        const siblings = Array.from(parentList.children);
+        const index = siblings.indexOf(listItem);
+        if (index !== -1) {
+          startLineNum = index + 1;
+        }
+      }
+
+      // Capture line before
+      const prevElem = listItem.previousElementSibling;
+      if (prevElem) {
+        prevLineText = prevElem.innerText.trim();
+      }
+
+      // Capture line after
+      const nextElem = listItem.nextElementSibling;
+      if (nextElem) {
+        nextLineText = nextElem.innerText.trim();
+      }
+    }
+
+    // Build the line number reference string
+    const lineRefHeader = startLineNum ? `*Regarding Line ${startLineNum}:*\n\n` : '';
+
+    // Format the snippet: line before, bold target selection, line after
+    let snippetLines = [];
+    if (prevLineText) snippetLines.push(prevLineText);
+    
+    // Bold the target selected text
+    snippetLines.push(`**${selectedText}**`);
+    
+    if (nextLineText) snippetLines.push(nextLineText);
+
+    // Turn all lines into Markdown blockquotes
+    const formattedQuote = lineRefHeader + snippetLines.map(line => `> ${line}`).join('\n') + '\n\n';
 
     try {
       await navigator.clipboard.writeText(formattedQuote);
@@ -62,8 +85,8 @@
     }
 
     quoteBtn.style.display = 'none';
-    
-    // Scroll smoothly down to the Giscus frame
+
+    // Scroll smoothly down to Giscus
     const giscusContainer = document.querySelector('.giscus');
     if (giscusContainer) {
       giscusContainer.scrollIntoView({ behavior: 'smooth' });
