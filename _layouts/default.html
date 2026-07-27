@@ -4,55 +4,71 @@
 </head>
 <body>
 <!-- Floating Quote Button for Giscus -->
-<div id="quote-btn" style="display:none; position:fixed; z-index:9999; background:#24292e; color:#fff; padding:6px 12px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
-  💬 Quote to Discussion
-</div>
+<button id="quote-btn" type="button" style="
+  display: none; 
+  position: fixed; 
+  z-index: 99999; 
+  background: #24292e; 
+  color: #ffffff; 
+  border: 1px solid #444c56;
+  padding: 6px 12px; 
+  border-radius: 6px; 
+  font-size: 13px; 
+  font-weight: 600; 
+  cursor: pointer; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  align-items: center;
+  gap: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+">
+  <!-- Speech Bubble SVG Icon -->
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle;">
+    <path d="M1.75 1h12.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 14.25 13H10.5l-3.22 2.863A.75.75 0 0 1 6 15.313V13H1.75A1.75 1.75 0 0 1 0 11.25v-8.5C0 1.784.784 1 1.75 1ZM1.5 2.75v8.5c0 .138.112.25.25.25h5a.75.75 0 0 1 .75.75v1.44l2.51-2.231a.75.75 0 0 1 .5-.189h3.75a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25H1.75a.25.25 0 0 0-.25.25Z"></path>
+  </svg>
+  <span>Quote to Discussion</span>
+</button>
 
 <script>
   const quoteBtn = document.getElementById('quote-btn');
   let selectedText = '';
 
-  // Show floating button when user selects text
   document.addEventListener('mouseup', (e) => {
+    // Prevent hiding immediately when clicking the button itself
+    if (quoteBtn.contains(e.target)) return;
+
     const selection = window.getSelection();
     const text = selection.toString().trim();
 
-    // Ignore selections inside the quote button itself
-    if (e.target === quoteBtn) return;
-
     if (text.length > 0) {
       selectedText = text;
-      
-      // Position the floating button near the cursor/selection
       const rect = selection.getRangeAt(0).getBoundingClientRect();
-      quoteBtn.style.top = `${rect.top - 40}px`;
-      quoteBtn.style.left = `${rect.left + (rect.width / 2) - 60}px`;
-      quoteBtn.style.display = 'block';
+      
+      // Position above the highlight
+      quoteBtn.style.top = `${Math.max(10, rect.top - 45)}px`;
+      quoteBtn.style.left = `${Math.max(10, rect.left + (rect.width / 2) - 75)}px`;
+      quoteBtn.style.display = 'flex';
     } else {
       quoteBtn.style.display = 'none';
     }
   });
 
-  // Handle click on "Quote to Discussion"
   quoteBtn.addEventListener('click', async () => {
-    // Format text as Markdown quote
     const formattedQuote = `> ${selectedText.replace(/\n/g, '\n> ')}\n\n`;
 
-    // Copy formatted text to clipboard
     try {
       await navigator.clipboard.writeText(formattedQuote);
     } catch (err) {
-      console.error('Failed to copy quote:', err);
+      console.error('Failed to copy text: ', err);
     }
 
-    // Hide button and scroll smoothly to the Giscus container
     quoteBtn.style.display = 'none';
+    
+    // Scroll smoothly down to the Giscus frame
     const giscusContainer = document.querySelector('.giscus');
     if (giscusContainer) {
       giscusContainer.scrollIntoView({ behavior: 'smooth' });
     }
 
-    // Clear window selection
     window.getSelection().removeAllRanges();
   });
 </script>
