@@ -1,112 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<!-- Lightweight classless CSS for instant modern styling -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page.title | default: site.title }}</title>
+  
+  <!-- Lightweight classless CSS for instant modern styling -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
 </head>
 <body>
-<button id="quote-btn" type="button" style="
-  display: none; 
-  position: fixed; 
-  z-index: 2147483647; 
-  background: #24292e; 
-  color: #ffffff; 
-  border: 1px solid #444c56;
-  padding: 6px 12px; 
-  border-radius: 6px; 
-  font-size: 13px; 
-  font-weight: 600; 
-  cursor: pointer; 
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  align-items: center;
-  gap: 6px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-">
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-    <path d="M1.75 1h12.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 14.25 13H10.5l-3.22 2.863A.75.75 0 0 1 6 15.313V13H1.75A1.75 1.75 0 0 1 0 11.25v-8.5C0 1.784.784 1 1.75 1ZM1.5 2.75v8.5c0 .138.112.25.25.25h5a.75.75 0 0 1 .75.75v1.44l2.51-2.231a.75.75 0 0 1 .5-.189h3.75a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25H1.75a.25.25 0 0 0-.25.25Z"></path>
-  </svg>
-  <span>Quote to Discussion</span>
-</button>
 
-<script>
-  const quoteBtn = document.getElementById('quote-btn');
-  let selectedText = '';
-  let selectedRange = null;
+  <!-- Main Page Content -->
+  <main>
+    {{ content }}
+  </main>
 
-  document.addEventListener('mouseup', (e) => {
-    if (quoteBtn.contains(e.target)) return;
+  <!-- Giscus Comments Section -->
+  <section class="giscus-wrapper" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e1e4e8;">
+    {% include giscus.html %}
+  </section>
 
-    setTimeout(() => {
-      const selection = window.getSelection();
-      const text = selection ? selection.toString().trim() : '';
+  <!-- Floating Quote Button -->
+  <button id="quote-btn" type="button" style="
+    display: none; 
+    position: fixed; 
+    z-index: 2147483647; 
+    background: #24292e; 
+    color: #ffffff; 
+    border: 1px solid #444c56;
+    padding: 6px 12px; 
+    border-radius: 6px; 
+    font-size: 13px; 
+    font-weight: 600; 
+    cursor: pointer; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    align-items: center;
+    gap: 6px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  ">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M1.75 1h12.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 14.25 13H10.5l-3.22 2.863A.75.75 0 0 1 6 15.313V13H1.75A1.75 1.75 0 0 1 0 11.25v-8.5C0 1.784.784 1 1.75 1ZM1.5 2.75v8.5c0 .138.112.25.25.25h5a.75.75 0 0 1 .75.75v1.44l2.51-2.231a.75.75 0 0 1 .5-.189h3.75a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25H1.75a.25.25 0 0 0-.25.25Z"></path>
+    </svg>
+    <span>Quote to Discussion</span>
+  </button>
 
-      if (text.length > 0 && selection.rangeCount > 0) {
-        selectedText = text;
-        selectedRange = selection.getRangeAt(0);
+  <!-- Quote Selection Logic -->
+  <script>
+    const quoteBtn = document.getElementById('quote-btn');
+    let selectedText = '';
+    let selectedRange = null;
 
-        // Position button right above mouse cursor release point
-        const x = Math.min(window.innerWidth - 160, Math.max(10, e.clientX - 70));
-        const y = Math.max(10, e.clientY - 50);
+    document.addEventListener('mouseup', (e) => {
+      if (quoteBtn.contains(e.target)) return;
 
-        quoteBtn.style.left = `${x}px`;
-        quoteBtn.style.top = `${y}px`;
-        quoteBtn.style.display = 'flex';
-      } else {
-        quoteBtn.style.display = 'none';
+      setTimeout(() => {
+        const selection = window.getSelection();
+        const text = selection ? selection.toString().trim() : '';
+
+        if (text.length > 0 && selection.rangeCount > 0) {
+          selectedText = text;
+          selectedRange = selection.getRangeAt(0);
+
+          const x = Math.min(window.innerWidth - 160, Math.max(10, e.clientX - 70));
+          const y = Math.max(10, e.clientY - 50);
+
+          quoteBtn.style.left = `${x}px`;
+          quoteBtn.style.top = `${y}px`;
+          quoteBtn.style.display = 'flex';
+        } else {
+          quoteBtn.style.display = 'none';
+        }
+      }, 10);
+    });
+
+    quoteBtn.addEventListener('click', async () => {
+      if (!selectedRange || !selectedText) return;
+
+      const startNode = selectedRange.startContainer;
+      const currentElem = startNode.nodeType === Node.TEXT_NODE ? startNode.parentElement : startNode;
+      const listItem = currentElem.closest('li, p, tr, div');
+
+      let startLineNum = null;
+      let prevLineText = '';
+      let nextLineText = '';
+
+      if (listItem) {
+        const parentList = listItem.parentElement;
+        if (parentList) {
+          const siblings = Array.from(parentList.children);
+          const index = siblings.indexOf(listItem);
+          if (index !== -1) startLineNum = index + 1;
+        }
+
+        const prevElem = listItem.previousElementSibling;
+        if (prevElem) prevLineText = prevElem.innerText.trim();
+
+        const nextElem = listItem.nextElementSibling;
+        if (nextElem) nextLineText = nextElem.innerText.trim();
       }
-    }, 10);
-  });
 
-  quoteBtn.addEventListener('click', async () => {
-    if (!selectedRange || !selectedText) return;
+      const lineRefHeader = startLineNum ? `*Regarding Line ${startLineNum}:*\n\n` : '';
 
-    const startNode = selectedRange.startContainer;
-    const currentElem = startNode.nodeType === Node.TEXT_NODE ? startNode.parentElement : startNode;
-    const listItem = currentElem.closest('li, p, tr, div');
+      let snippetLines = [];
+      if (prevLineText) snippetLines.push(prevLineText);
+      snippetLines.push(`**${selectedText}**`);
+      if (nextLineText) snippetLines.push(nextLineText);
 
-    let startLineNum = null;
-    let prevLineText = '';
-    let nextLineText = '';
+      const formattedQuote = lineRefHeader + snippetLines.map(line => `> ${line}`).join('\n') + '\n\n';
 
-    if (listItem) {
-      const parentList = listItem.parentElement;
-      if (parentList) {
-        const siblings = Array.from(parentList.children);
-        const index = siblings.indexOf(listItem);
-        if (index !== -1) startLineNum = index + 1;
+      try {
+        await navigator.clipboard.writeText(formattedQuote);
+      } catch (err) {
+        console.error('Failed to copy text: ', err);
       }
 
-      const prevElem = listItem.previousElementSibling;
-      if (prevElem) prevLineText = prevElem.innerText.trim();
+      quoteBtn.style.display = 'none';
 
-      const nextElem = listItem.nextElementSibling;
-      if (nextElem) nextLineText = nextElem.innerText.trim();
-    }
+      const giscusContainer = document.querySelector('.giscus, iframe.giscus-frame');
+      if (giscusContainer) {
+        giscusContainer.scrollIntoView({ behavior: 'smooth' });
+      }
 
-    const lineRefHeader = startLineNum ? `*Regarding Line ${startLineNum}:*\n\n` : '';
-
-    let snippetLines = [];
-    if (prevLineText) snippetLines.push(prevLineText);
-    snippetLines.push(`**${selectedText}**`);
-    if (nextLineText) snippetLines.push(nextLineText);
-
-    const formattedQuote = lineRefHeader + snippetLines.map(line => `> ${line}`).join('\n') + '\n\n';
-
-    try {
-      await navigator.clipboard.writeText(formattedQuote);
-    } catch (err) {
-      console.error('Failed to copy text: ', err);
-    }
-
-    quoteBtn.style.display = 'none';
-
-    const giscusContainer = document.querySelector('.giscus');
-    if (giscusContainer) {
-      giscusContainer.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    window.getSelection().removeAllRanges();
-  });
-</script>
+      window.getSelection().removeAllRanges();
+    });
+  </script>
 </body>
-{{ content }}
-
-{% include giscus.html %}
+</html>
