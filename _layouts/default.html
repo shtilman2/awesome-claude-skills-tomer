@@ -2,7 +2,61 @@
 <!-- Lightweight classless CSS for instant modern styling -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
 </head>
+<body>
+<!-- Floating Quote Button for Giscus -->
+<div id="quote-btn" style="display:none; position:fixed; z-index:9999; background:#24292e; color:#fff; padding:6px 12px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+  💬 Quote to Discussion
+</div>
 
+<script>
+  const quoteBtn = document.getElementById('quote-btn');
+  let selectedText = '';
+
+  // Show floating button when user selects text
+  document.addEventListener('mouseup', (e) => {
+    const selection = window.getSelection();
+    const text = selection.toString().trim();
+
+    // Ignore selections inside the quote button itself
+    if (e.target === quoteBtn) return;
+
+    if (text.length > 0) {
+      selectedText = text;
+      
+      // Position the floating button near the cursor/selection
+      const rect = selection.getRangeAt(0).getBoundingClientRect();
+      quoteBtn.style.top = `${rect.top - 40}px`;
+      quoteBtn.style.left = `${rect.left + (rect.width / 2) - 60}px`;
+      quoteBtn.style.display = 'block';
+    } else {
+      quoteBtn.style.display = 'none';
+    }
+  });
+
+  // Handle click on "Quote to Discussion"
+  quoteBtn.addEventListener('click', async () => {
+    // Format text as Markdown quote
+    const formattedQuote = `> ${selectedText.replace(/\n/g, '\n> ')}\n\n`;
+
+    // Copy formatted text to clipboard
+    try {
+      await navigator.clipboard.writeText(formattedQuote);
+    } catch (err) {
+      console.error('Failed to copy quote:', err);
+    }
+
+    // Hide button and scroll smoothly to the Giscus container
+    quoteBtn.style.display = 'none';
+    const giscusContainer = document.querySelector('.giscus');
+    if (giscusContainer) {
+      giscusContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Clear window selection
+    window.getSelection().removeAllRanges();
+  });
+</script>
+</body>
 
 {{ content }}
 
